@@ -155,12 +155,14 @@ export default function Quiz() {
   const currentQ = quizData.questions[currentQuestion];
   const progress = ((currentQuestion + 1) / quizData.questions.length) * 100;
 
+  // Check if we have a real image or just gradient fallback
+  const hasRealImage =
+    quizData.backgroundImage &&
+    !quizData.backgroundImage.startsWith("linear-gradient");
+
   // Prepare background style
   const backgroundStyle: React.CSSProperties = {};
-  if (
-    quizData.backgroundImage &&
-    !quizData.backgroundImage.startsWith("linear-gradient")
-  ) {
+  if (hasRealImage) {
     backgroundStyle.backgroundImage = `url(${quizData.backgroundImage})`;
     backgroundStyle.backgroundSize = "cover";
     backgroundStyle.backgroundPosition = "center";
@@ -174,6 +176,125 @@ export default function Quiz() {
     }
   }
 
+  // If gradient fallback, use centered layout
+  if (!hasRealImage) {
+    return (
+      <div
+        className="min-h-screen flex flex-col items-center justify-center p-4"
+        style={backgroundStyle}
+      >
+        {/* Dark overlay for better readability */}
+        <div className="fixed inset-0 bg-black/50 -z-10"></div>
+        <div className="glass-card p-6 lg:p-8 w-full max-w-3xl">
+          {/* Header */}
+          <div className="mb-4 lg:mb-6">
+            <div className="flex justify-between items-center mb-3">
+              <div>
+                <h2 className="text-xl lg:text-2xl font-bold text-white text-contrast">
+                  {quizData.topic}
+                </h2>
+                <p className="text-gray-200 text-xs lg:text-sm capitalize text-contrast">
+                  {quizData.difficulty} Difficulty
+                </p>
+              </div>
+              <div
+                className={`text-2xl lg:text-3xl font-bold text-contrast ${
+                  timeLeft < 60 ? "text-red-400 animate-pulse" : "text-blue-400"
+                }`}
+              >
+                {formatTime(timeLeft)}
+              </div>
+            </div>
+
+            {/* Progress bar */}
+            <div className="w-full bg-black/30 rounded-full h-2">
+              <div
+                className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full transition-all duration-300 shadow-lg"
+                style={{ width: `${progress}%` }}
+              ></div>
+            </div>
+            <p className="text-sm text-gray-200 mt-2 text-contrast">
+              Question {currentQuestion + 1} of {quizData.questions.length}
+            </p>
+          </div>
+
+          {/* Question */}
+          <div className="mb-6 lg:mb-8">
+            <h3 className="text-lg lg:text-xl font-semibold mb-4 lg:mb-6 text-white text-contrast">
+              {currentQ.question}
+            </h3>
+
+            <div className="space-y-2 lg:space-y-3">
+              {currentQ.options.map((option, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleSelectAnswer(index)}
+                  className={`w-full text-left p-3 lg:p-4 rounded-xl border-2 transition-all duration-200 text-white text-contrast text-sm lg:text-base ${
+                    selectedAnswers[currentQuestion] === index
+                      ? "border-blue-400 bg-blue-500/40 backdrop-blur-sm shadow-lg"
+                      : "border-white/30 bg-black/40 backdrop-blur-sm hover:border-blue-300 hover:bg-black/50"
+                  }`}
+                >
+                  <span className="font-medium mr-2 lg:mr-3">
+                    {String.fromCharCode(65 + index)}.
+                  </span>
+                  {option}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Navigation */}
+          <div className="flex justify-between items-center">
+            <button
+              onClick={handlePrevious}
+              disabled={currentQuestion === 0}
+              className="btn-secondary disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              ← Previous
+            </button>
+
+            <div className="flex gap-2">
+              {quizData.questions.map((_, index) => (
+                <div
+                  key={index}
+                  className={`w-2 h-2 rounded-full ${
+                    selectedAnswers[index] !== null
+                      ? "bg-blue-500"
+                      : "bg-white/20"
+                  }`}
+                ></div>
+              ))}
+            </div>
+
+            {currentQuestion === quizData.questions.length - 1 ? (
+              <button onClick={handleSubmit} className="btn-primary">
+                Submit Quiz
+              </button>
+            ) : (
+              <button onClick={handleNext} className="btn-primary">
+                Next →
+              </button>
+            )}
+          </div>
+
+          {/* Skip to submit */}
+          {currentQuestion < quizData.questions.length - 1 && (
+            <div className="mt-4 text-center">
+              <button
+                onClick={handleSubmit}
+                className="text-sm text-gray-400 hover:text-gray-300 transition-colors"
+              >
+                Submit quiz early
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Side-by-side layout for real images
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
       {/* Left side - Quiz Panel (33%) */}
