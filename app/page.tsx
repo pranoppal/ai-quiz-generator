@@ -190,15 +190,6 @@ export default function Home() {
             )}
           </button>
         </form>
-
-        <div className="mt-8 pt-6 border-t border-white/20 text-center">
-          <button
-            onClick={() => router.push("/leaderboard")}
-            className="text-blue-400 hover:text-blue-300 transition-colors font-medium"
-          >
-            View Leaderboard →
-          </button>
-        </div>
       </div>
 
       <div className="mt-8 text-center text-gray-400 text-sm">

@@ -116,22 +116,6 @@ export default function Quiz() {
 
     localStorage.setItem("lastQuizResult", JSON.stringify(result));
 
-    // Add to leaderboard
-    const leaderboard = JSON.parse(localStorage.getItem("leaderboard") || "[]");
-    leaderboard.push(result);
-
-    // Sort by score (desc) and time (asc)
-    leaderboard.sort((a: any, b: any) => {
-      if (b.score !== a.score) return b.score - a.score;
-      return a.timeTaken - b.timeTaken;
-    });
-
-    // Keep top 100
-    localStorage.setItem(
-      "leaderboard",
-      JSON.stringify(leaderboard.slice(0, 100))
-    );
-
     router.push("/results");
   }, [quizData, selectedAnswers, router]);
 

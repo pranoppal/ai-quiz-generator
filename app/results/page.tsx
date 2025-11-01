@@ -32,9 +32,8 @@ interface QuizResult {
 export default function Results() {
   const router = useRouter();
   const [result, setResult] = useState<QuizResult | null>(null);
-  const [playerName, setPlayerName] = useState("");
-  const [showNameInput, setShowNameInput] = useState(false);
   const [showReview, setShowReview] = useState(false);
+  const [submittingScore, setSubmittingScore] = useState(false);
 
   useEffect(() => {
     const data = localStorage.getItem("lastQuizResult");
@@ -45,18 +44,46 @@ export default function Results() {
     setResult(JSON.parse(data));
   }, [router]);
 
-  const handleSaveToLeaderboard = () => {
-    if (!playerName.trim()) {
-      alert("Please enter your name");
+  const handleSaveToLeaderboard = async () => {
+    if (!result) return;
+
+    // Prompt user for their name
+    const userName = prompt("Enter your name for the leaderboard:");
+
+    if (!userName || !userName.trim()) {
       return;
     }
 
-    const leaderboard = JSON.parse(localStorage.getItem("leaderboard") || "[]");
-    const updatedLeaderboard = leaderboard.map((entry: any) =>
-      entry.timestamp === result?.timestamp ? { ...entry, playerName } : entry
-    );
-    localStorage.setItem("leaderboard", JSON.stringify(updatedLeaderboard));
-    router.push("/leaderboard");
+    setSubmittingScore(true);
+
+    try {
+      const response = await fetch(
+        "https://sp-seva-mela-leaderboard.netlify.app/api/leaderboard",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: userName.trim(),
+            score: result.score,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        alert("Score submitted to leaderboard successfully! 🎉");
+      } else {
+        alert("Failed to submit score. Please try again.");
+      }
+    } catch (error) {
+      console.error("Failed to submit score to leaderboard:", error);
+      alert(
+        "Failed to submit score. Please check your connection and try again."
+      );
+    } finally {
+      setSubmittingScore(false);
+    }
   };
 
   if (!result) {
@@ -337,46 +364,46 @@ export default function Results() {
           </button>
         )}
 
-        {/* Name input for leaderboard */}
-        {!showNameInput ? (
-          <button
-            onClick={() => setShowNameInput(true)}
-            className="btn-secondary w-full mb-4"
-          >
-            Save to Leaderboard
-          </button>
-        ) : (
-          <div className="mb-4 space-y-3">
-            <input
-              type="text"
-              value={playerName}
-              onChange={(e) => setPlayerName(e.target.value)}
-              placeholder="Enter your name"
-              className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all"
-              maxLength={20}
-            />
-            <button
-              onClick={handleSaveToLeaderboard}
-              className="btn-primary w-full"
-            >
-              Submit to Leaderboard
-            </button>
-          </div>
-        )}
-
         {/* Actions */}
         <div className="space-y-3">
+          <button
+            onClick={handleSaveToLeaderboard}
+            disabled={submittingScore}
+            className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {submittingScore ? (
+              <span className="flex items-center justify-center">
+                <svg
+                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                Submitting...
+              </span>
+            ) : (
+              "🏆 Save to Leaderboard"
+            )}
+          </button>
           <button
             onClick={() => router.push("/")}
             className="btn-secondary w-full"
           >
             Take Another Quiz
-          </button>
-          <button
-            onClick={() => router.push("/leaderboard")}
-            className="w-full text-blue-400 hover:text-blue-300 transition-colors"
-          >
-            View Leaderboard →
           </button>
         </div>
       </div>
