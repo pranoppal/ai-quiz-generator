@@ -58,7 +58,7 @@ export default function Results() {
 
     try {
       const response = await fetch(
-        "http://sp-seva-mela-leaderboard.netlify.app/api/leaderboard",
+        "https://sp-seva-mela-leaderboard.netlify.app/api/leaderboard",
         {
           method: "POST",
           headers: {
