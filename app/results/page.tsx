@@ -34,6 +34,9 @@ export default function Results() {
   const [result, setResult] = useState<QuizResult | null>(null);
   const [showReview, setShowReview] = useState(false);
   const [submittingScore, setSubmittingScore] = useState(false);
+  const [showLeaderboardPopup, setShowLeaderboardPopup] = useState(false);
+  const [userName, setUserName] = useState("");
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
   useEffect(() => {
     const data = localStorage.getItem("lastQuizResult");
@@ -44,15 +47,20 @@ export default function Results() {
     setResult(JSON.parse(data));
   }, [router]);
 
-  const handleSaveToLeaderboard = async () => {
-    if (!result) return;
+  // Show leaderboard popup after 5 seconds
+  useEffect(() => {
+    if (!result || hasSubmitted) return;
 
-    // Prompt user for their name
-    const userName = prompt("Enter your name for the leaderboard:");
+    const timer = setTimeout(() => {
+      setShowLeaderboardPopup(true);
+    }, 3000);
 
-    if (!userName || !userName.trim()) {
-      return;
-    }
+    return () => clearTimeout(timer);
+  }, [result, hasSubmitted]);
+
+  const handleSaveToLeaderboard = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!result || !userName.trim()) return;
 
     setSubmittingScore(true);
 
@@ -72,7 +80,12 @@ export default function Results() {
       );
 
       if (response.ok) {
-        alert("Score submitted to leaderboard successfully! 🎉");
+        setHasSubmitted(true);
+        setShowLeaderboardPopup(false);
+        // Show success message
+        setTimeout(() => {
+          alert("Score submitted to leaderboard successfully! 🎉");
+        }, 100);
       } else {
         alert("Failed to submit score. Please try again.");
       }
@@ -84,6 +97,11 @@ export default function Results() {
     } finally {
       setSubmittingScore(false);
     }
+  };
+
+  const handleSkipLeaderboard = () => {
+    setShowLeaderboardPopup(false);
+    setHasSubmitted(true);
   };
 
   if (!result) {
@@ -365,41 +383,8 @@ export default function Results() {
         {/* Actions */}
         <div className="space-y-3">
           <button
-            onClick={handleSaveToLeaderboard}
-            disabled={submittingScore}
-            className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {submittingScore ? (
-              <span className="flex items-center justify-center">
-                <svg
-                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                Submitting...
-              </span>
-            ) : (
-              "🏆 Save to Leaderboard"
-            )}
-          </button>
-          <button
             onClick={() => router.push("/")}
-            className="btn-secondary w-full"
+            className="btn-primary w-full"
           >
             Take Another Quiz
           </button>
@@ -435,6 +420,103 @@ export default function Results() {
               result.imageAttribution.source
             )}
           </p>
+        </div>
+      )}
+
+      {/* Leaderboard Popup */}
+      {showLeaderboardPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="glass-card p-8 max-w-md w-full animate-scale-up">
+            {/* Trophy Icon */}
+            <div className="mb-6 flex justify-center">
+              <div className="w-24 h-24 bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-full flex items-center justify-center border-4 border-yellow-500/30">
+                <span className="text-6xl">🏆</span>
+              </div>
+            </div>
+
+            {/* Title */}
+            <h2 className="text-2xl font-bold text-center mb-2 bg-gradient-to-r from-yellow-400 to-orange-400 text-transparent bg-clip-text">
+              Amazing Score!
+            </h2>
+
+            <p className="text-gray-300 text-center mb-6">
+              You scored{" "}
+              <span className="text-2xl font-bold text-blue-400">
+                {result.score}%
+              </span>
+              !
+              <br />
+              Save your score to the leaderboard
+            </p>
+
+            {/* Form */}
+            <form onSubmit={handleSaveToLeaderboard} className="space-y-4">
+              <div>
+                <label
+                  htmlFor="userName"
+                  className="block text-sm font-medium mb-2"
+                >
+                  Your Name
+                </label>
+                <input
+                  type="text"
+                  id="userName"
+                  value={userName}
+                  onChange={(e) => setUserName(e.target.value)}
+                  placeholder="Enter your name"
+                  autoComplete="off"
+                  autoFocus
+                  required
+                  className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all text-white placeholder-gray-400"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col gap-3">
+                <button
+                  type="submit"
+                  disabled={submittingScore || !userName.trim()}
+                  className="w-full px-6 py-3 rounded-xl bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-semibold transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                >
+                  {submittingScore ? (
+                    <span className="flex items-center justify-center">
+                      <svg
+                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Submitting...
+                    </span>
+                  ) : (
+                    "🏆 Save to Leaderboard"
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSkipLeaderboard}
+                  disabled={submittingScore}
+                  className="w-full px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold transition-all disabled:opacity-50"
+                >
+                  Skip
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
