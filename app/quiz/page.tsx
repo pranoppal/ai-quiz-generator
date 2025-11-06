@@ -95,8 +95,68 @@ export default function Quiz() {
       }
     });
 
-    const score = Math.round((correctCount / quizData.questions.length) * 100);
     const timeTaken = Math.floor((Date.now() - quizData.startTime) / 1000);
+
+    // Advanced time-based scoring algorithm
+    const score = calculateScore(
+      correctCount,
+      quizData.questions.length,
+      timeTaken
+    );
+
+    function calculateScore(
+      correct: number,
+      total: number,
+      timeInSeconds: number
+    ): number {
+      // Base accuracy score (0-100)
+      const accuracyScore = (correct / total) * 100;
+
+      // If no correct answers, return 0
+      if (correct === 0) return 0;
+
+      // Expected time: 30 seconds per question as "ideal" time
+      const idealTimePerQuestion = 30;
+      const idealTotalTime = total * idealTimePerQuestion;
+
+      // Time efficiency ratio
+      const timeRatio = timeInSeconds / idealTotalTime;
+
+      // Non-linear time bonus/penalty using exponential decay
+      // Fast completion gets bonus, slow completion gets penalty
+      // Formula: e^(-0.5 * (timeRatio - 0.5)^2) gives a bell curve centered around optimal time
+      let timeMultiplier: number;
+
+      if (timeRatio <= 0.3) {
+        // Too fast - might be guessing (slight penalty)
+        timeMultiplier = 0.85 + (timeRatio / 0.3) * 0.15;
+      } else if (timeRatio <= 1.0) {
+        // Optimal range - exponential bonus for faster times
+        // Best multiplier at 0.5 ratio (15 seconds per question)
+        const x = (timeRatio - 0.3) / 0.7;
+        timeMultiplier = 1.0 + 0.15 * Math.exp(-2 * Math.pow(x - 0.3, 2));
+      } else if (timeRatio <= 2.0) {
+        // Slower than ideal - gradual penalty
+        const x = timeRatio - 1.0;
+        timeMultiplier = 1.0 - 0.15 * (1 - Math.exp(-x));
+      } else {
+        // Very slow - heavier penalty with diminishing returns
+        timeMultiplier = 0.85 - Math.min(0.15, 0.05 * Math.log(timeRatio - 1));
+      }
+
+      // Calculate weighted score
+      let finalScore = accuracyScore * timeMultiplier;
+
+      // Apply a soft cap using logarithmic function to ensure no perfect 100
+      // This compresses high scores, making 100 mathematically impossible
+      if (finalScore >= 90) {
+        // Soft cap that asymptotically approaches 98
+        finalScore = 90 + 8 * (1 - Math.exp(-(finalScore - 90) / 15));
+      }
+
+      // Ensure score is between 0 and 98 (maximum possible)
+      return Math.max(0, Math.min(98, Math.round(finalScore)));
+    }
 
     // Store result with questions and answers for review
     const result = {
@@ -177,9 +237,9 @@ export default function Quiz() {
                 <h2 className="text-xl lg:text-2xl font-bold text-white text-contrast">
                   {quizData.topic}
                 </h2>
-                <p className="text-gray-200 text-xs lg:text-sm capitalize text-contrast">
+                {/* <p className="text-gray-200 text-xs lg:text-sm capitalize text-contrast">
                   {quizData.difficulty} Difficulty
-                </p>
+                </p> */}
               </div>
               <div
                 className={`text-2xl lg:text-3xl font-bold text-contrast ${
@@ -291,9 +351,9 @@ export default function Quiz() {
                 <h2 className="text-xl lg:text-2xl font-bold text-white text-contrast">
                   {quizData.topic}
                 </h2>
-                <p className="text-gray-200 text-xs lg:text-sm capitalize text-contrast">
+                {/* <p className="text-gray-200 text-xs lg:text-sm capitalize text-contrast">
                   {quizData.difficulty} Difficulty
-                </p>
+                </p> */}
               </div>
               <div
                 className={`text-2xl lg:text-3xl font-bold text-contrast ${

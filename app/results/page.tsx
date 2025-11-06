@@ -107,11 +107,12 @@ export default function Results() {
   };
 
   const getScoreMessage = (score: number) => {
-    if (score === 100) return "🎉 Perfect Score!";
-    if (score >= 80) return "🌟 Excellent!";
-    if (score >= 60) return "👍 Good Job!";
-    if (score >= 40) return "💪 Keep Practicing!";
-    return "📚 Study More!";
+    if (score >= 95) return "🎉 Outstanding! Nearly Perfect!";
+    if (score >= 85) return "🌟 Excellent Performance!";
+    if (score >= 70) return "👍 Great Job!";
+    if (score >= 50) return "💪 Good Effort!";
+    if (score >= 30) return "📚 Keep Practicing!";
+    return "💡 Try Again!";
   };
 
   // Prepare background style
@@ -339,10 +340,10 @@ export default function Results() {
             <p className="text-gray-400 text-sm mb-1">Topic</p>
             <p className="font-semibold">{result.topic}</p>
           </div>
-          <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+          {/* <div className="bg-white/5 rounded-xl p-4 border border-white/10">
             <p className="text-gray-400 text-sm mb-1">Difficulty</p>
             <p className="font-semibold capitalize">{result.difficulty}</p>
-          </div>
+          </div> */}
           <div className="bg-white/5 rounded-xl p-4 border border-white/10">
             <p className="text-gray-400 text-sm mb-1">Time Taken</p>
             <p className="font-semibold">{formatTime(result.timeTaken)}</p>

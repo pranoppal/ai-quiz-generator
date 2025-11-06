@@ -2,14 +2,20 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import axios from "axios";
 
 export default function Home() {
   const [topic, setTopic] = useState("");
-  const [difficulty, setDifficulty] = useState("hard");
+  const [difficulty, setDifficulty] = useState("medium");
   const [numQuestions, setNumQuestions] = useState(5);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
+  const [errorMessage, setErrorMessage] = useState({
+    title: "",
+    body: "",
+  });
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,17 +73,42 @@ export default function Home() {
     } catch (err) {
       if (axios.isAxiosError(err)) {
         if (err.code === "ECONNABORTED" || err.message.includes("timeout")) {
-          setError("Request timed out. Please try again.");
+          setErrorMessage({
+            title: "Request Timed Out",
+            body: "The quiz generation is taking longer than expected. This might be due to a slow connection or high server load.",
+          });
         } else {
-          setError("Failed to generate quiz. Please try again.");
+          setErrorMessage({
+            title: "Oops! Something Went Wrong",
+            body: "We couldn't generate your quiz at this moment. Please check your connection and try again.",
+          });
         }
       } else {
-        setError("Failed to generate quiz. Please try again.");
+        setErrorMessage({
+          title: "Oops! Something Went Wrong",
+          body: "We couldn't generate your quiz at this moment. Please check your connection and try again.",
+        });
       }
+      setShowErrorDialog(true);
       console.error(err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleTryAgain = () => {
+    setShowErrorDialog(false);
+    // Open a different URL in a new tab
+    window.open(
+      "https://ai-quiz-generator-sp-seva-mela2.netlify.app/",
+      "_blank"
+    );
+  };
+
+  const handlePlayGame = () => {
+    setShowErrorDialog(false);
+    // Navigate to game page (you can change this route as needed)
+    window.open("https://snake.io", "_blank");
   };
 
   return (
@@ -203,6 +234,48 @@ export default function Home() {
       <div className="mt-8 text-center text-gray-400 text-sm">
         <p>Powered by AI</p>
       </div>
+
+      {/* Error Dialog */}
+      {showErrorDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="glass-card p-8 max-w-md w-full animate-scale-up">
+            {/* Image Placeholder */}
+            <div className="mb-6 flex justify-center">
+              <div className="flex items-center justify-center border-4">
+                <Image
+                  src="/images/sleeping-ai.png"
+                  alt="Error"
+                  width={512}
+                  height={256}
+                />
+              </div>
+            </div>
+            {/* Title */}
+            <h2 className="text-2xl font-bold text-center mb-4 bg-gradient-to-r from-red-400 to-orange-400 text-transparent bg-clip-text">
+              {errorMessage.title}
+            </h2>
+            {/* Body Text
+            <p className="text-gray-300 text-center mb-8">
+              {errorMessage.body}
+            </p> */}
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={handlePlayGame}
+                className="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-semibold transition-all transform hover:scale-105"
+              >
+                Play a Game Instead
+              </button>
+              <button
+                onClick={handleTryAgain}
+                className="flex-1 px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold transition-all"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
