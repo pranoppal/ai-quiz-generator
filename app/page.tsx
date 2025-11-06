@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import axios from "axios";
 
 export default function Home() {
   const [topic, setTopic] = useState("");
-  const [difficulty, setDifficulty] = useState("medium");
+  const [difficulty, setDifficulty] = useState("hard");
   const [numQuestions, setNumQuestions] = useState(5);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -24,34 +25,29 @@ export default function Home() {
 
     try {
       // Generate background image and quiz in parallel
-      const [imageResponse, quizResponse] = await Promise.all([
-        fetch("/api/generate-image", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ topic }),
-        }),
-        fetch("/api/generate-quiz", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ topic, difficulty, numQuestions }),
-        }),
+      // const [imageResponse, quizResponse] = await Promise.all([
+      const [quizResponse] = await Promise.all([
+        // axios
+        //   .post(
+        //     "/api/generate-image",
+        //     { topic },
+        //     { timeout: 60000 } // 60 second timeout
+        //   )
+        //   .catch((err) => ({ data: null, error: err })),
+        axios.post(
+          "/api/generate-quiz",
+          { topic, difficulty, numQuestions },
+          { timeout: 60000 } // 60 second timeout
+        ),
       ]);
 
-      if (!quizResponse.ok) {
-        throw new Error("Failed to generate quiz");
-      }
-
-      const quizData = await quizResponse.json();
+      const quizData = quizResponse.data;
 
       // Get image data (don't fail if image generation fails)
       let imageData = null;
-      if (imageResponse.ok) {
-        imageData = await imageResponse.json();
-      }
+      // if (imageResponse.data) {
+      //   imageData = imageResponse.data;
+      // }
 
       // Store quiz data in localStorage
       localStorage.setItem(
@@ -69,7 +65,15 @@ export default function Home() {
 
       router.push("/quiz");
     } catch (err) {
-      setError("Failed to generate quiz. Please try again.");
+      if (axios.isAxiosError(err)) {
+        if (err.code === "ECONNABORTED" || err.message.includes("timeout")) {
+          setError("Request timed out. Please try again.");
+        } else {
+          setError("Failed to generate quiz. Please try again.");
+        }
+      } else {
+        setError("Failed to generate quiz. Please try again.");
+      }
       console.error(err);
     } finally {
       setLoading(false);
@@ -78,13 +82,16 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4">
-      <div className="glass-card p-8 md:p-12 max-w-2xl w-full">
+      <div className="glass-card p-8 md:p-12 max-w-5xl w-full">
         <div className="text-center mb-8">
-          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-500 text-transparent bg-clip-text">
-            AI Quiz Generator
+          <h1 className="text-6xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-700 text-transparent bg-clip-text">
+            Seva Mela 2025
           </h1>
-          <p className="text-gray-300 text-lg">
-            Test your knowledge on any topic with AI-generated questions
+          <h1 className="text-8xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-500 text-transparent bg-clip-text">
+            AI Quiz
+          </h1>
+          <p className="text-gray-300 text-xl pt-4">
+            Ready to challenge yourself?
           </p>
         </div>
 
@@ -98,12 +105,13 @@ export default function Home() {
               id="topic"
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
-              placeholder="e.g., JavaScript, World History, Biology..."
+              placeholder="e.g., India, Sadhguru, Cricket..."
+              autoComplete="off"
               className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all"
             />
           </div>
 
-          <div>
+          {/* <div>
             <label
               htmlFor="difficulty"
               className="block text-sm font-medium mb-2"
@@ -126,8 +134,8 @@ export default function Home() {
                 Hard
               </option>
             </select>
-          </div>
-
+          </div> */}
+          {/* 
           <div>
             <label
               htmlFor="numQuestions"
@@ -148,7 +156,7 @@ export default function Home() {
               <span>3</span>
               <span>10</span>
             </div>
-          </div>
+          </div> */}
 
           {error && (
             <div className="p-4 bg-red-500/20 border border-red-500/50 rounded-xl text-red-200">
@@ -193,7 +201,7 @@ export default function Home() {
       </div>
 
       <div className="mt-8 text-center text-gray-400 text-sm">
-        <p>Powered by AI • Made with Next.js</p>
+        <p>Powered by AI</p>
       </div>
     </div>
   );

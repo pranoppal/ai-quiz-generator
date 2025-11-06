@@ -333,7 +333,6 @@ export default function Results() {
             questions correct
           </p>
         </div>
-
         {/* Stats */}
         <div className="grid grid-cols-2 gap-4 mb-8">
           <div className="bg-white/5 rounded-xl p-4 border border-white/10">
@@ -353,17 +352,15 @@ export default function Results() {
             <p className="font-semibold">{result.totalQuestions}</p>
           </div>
         </div>
-
         {/* Review Quiz Button */}
-        {result.questions && result.userAnswers && (
+        {/* {result.questions && result.userAnswers && (
           <button
             onClick={() => setShowReview(true)}
             className="btn-primary w-full mb-4"
           >
             📝 Review Answers
           </button>
-        )}
-
+        )} */}
         {/* Actions */}
         <div className="space-y-3">
           <button
